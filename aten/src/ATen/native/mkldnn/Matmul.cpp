@@ -153,7 +153,7 @@ mkldnn_gemm(
   if constexpr (std::is_same_v<scalar_t, float>) {
     idtype = ideep::tensor::data_type::f32;
   }
-  #ifdef __aarch64__
+#if defined(__aarch64__) && AT_MKLDNN_ACL_ENABLED()
     ideep::tensor a({
         /*sizes=*/{k, m},
         idtype},
