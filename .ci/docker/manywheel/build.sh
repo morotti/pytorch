@@ -6,6 +6,7 @@ set -eou pipefail
 TOPDIR=$(git rev-parse --show-toplevel)
 
 image="$1"
+tag="$3"
 shift
 
 if [ -z "${image}" ]; then
@@ -14,19 +15,20 @@ if [ -z "${image}" ]; then
 fi
 
 DOCKER_IMAGE="pytorch/${image}"
+DOCKER_TAG_PREFIX=$(echo "${tag}" | awk -F':' '{print $2}' | awk -F'-' '{print $1}')
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY:-docker.io}"
 
 GPU_ARCH_VERSION=""
 if [[ "${image}" == *:cuda* ]]; then
     # extract cuda version from image name.  e.g. manylinux2_28-builder:cuda12.8 returns 12.8
-    GPU_ARCH_VERSION=$(echo "${image}" | awk -F':cuda' '{print $2}')
+    GPU_ARCH_VERSION=$(echo "${DOCKER_TAG_PREFIX}" | awk -F':cuda' '{print $2}')
 elif [[ "${image}" == *:rocm* ]]; then
     # extract rocm version from image name.  e.g. manylinux2_28-builder:rocm6.2.4 returns 6.2.4
-    GPU_ARCH_VERSION=$(echo "${image}" | awk -F':rocm' '{print $2}')
+    GPU_ARCH_VERSION=$(echo "${DOCKER_TAG_PREFIX}" | awk -F':rocm' '{print $2}')
 fi
 
-case ${image} in
+case ${image}:${DOCKER_TAG_PREFIX} in
     manylinux2_28-builder:cpu)
         TARGET=cpu_final
         GPU_IMAGE=amd64/almalinux:8
