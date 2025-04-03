@@ -20,10 +20,10 @@ DOCKER_TAG_PREFIX=$(echo "${tag}" | awk -F':' '{print $2}' | awk -F'-' '{print $
 DOCKER_REGISTRY="${DOCKER_REGISTRY:-docker.io}"
 
 GPU_ARCH_VERSION=""
-if [[ "${image}" == *:cuda* ]]; then
+if [[ "${DOCKER_TAG_PREFIX}" == cuda* ]]; then
     # extract cuda version from image name.  e.g. manylinux2_28-builder:cuda12.8 returns 12.8
     GPU_ARCH_VERSION=$(echo "${DOCKER_TAG_PREFIX}" | awk -F'cuda' '{print $2}')
-elif [[ "${image}" == *:rocm* ]]; then
+elif [[ "${DOCKER_TAG_PREFIX}" == rocm* ]]; then
     # extract rocm version from image name.  e.g. manylinux2_28-builder:rocm6.2.4 returns 6.2.4
     GPU_ARCH_VERSION=$(echo "${DOCKER_TAG_PREFIX}" | awk -F'rocm' '{print $2}')
 fi
