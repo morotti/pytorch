@@ -92,7 +92,7 @@ case ${image}:${DOCKER_TAG_PREFIX} in
         MANY_LINUX_VERSION="2_28"
         ;;
     *)
-        echo "ERROR: Unrecognized image name: ${image}"
+        echo "ERROR: Unrecognized image name: ${image}:${DOCKER_TAG_PREFIX}"
         exit 1
         ;;
 esac
