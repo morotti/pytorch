@@ -220,6 +220,7 @@ jobs:
           # isn't useful.  Instead, we use the default value to get around some
           # checks in the action
           docker-build-dir: .ci/docker
+          working-directory: pytorch
 
       - name: Pull Docker image
         if: ${{ steps.filter.outputs.is-test-matrix-empty == 'False' && inputs.build_environment != 'linux-s390x-binary-manywheel' }}

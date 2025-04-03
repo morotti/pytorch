@@ -195,11 +195,26 @@ jobs:
         uses: pytorch/test-infra/.github/actions/setup-nvidia@main
         if: ${{ inputs.GPU_ARCH_TYPE == 'cuda' && steps.filter.outputs.is-test-matrix-empty == 'False' }}
 
+      - name: Calculate docker image
+        id: calculate-docker-image
+        if: ${{ steps.filter.outputs.is-test-matrix-empty == 'False' && inputs.build_environment != 'linux-s390x-binary-manywheel' }}
+        uses: pytorch/test-infra/.github/actions/calculate-docker-image@csl/calculate_docker_image_custom_script_path
+        with:
+          docker-registry: docker.io
+          docker-image-name: ${{ inputs.DOCKER_IMAGE }}
+          custom-tag-prefix: ${{ inputs.DOCKER_IMAGE_TAG_PREFIX }}
+          # The docker-build-script should also be set when building the docker image,
+          # but if we want to spin wait for the docker build job to finish, it
+          # isn't useful.  Instead, we use the default value to get around some
+          # checks in the action
+          docker-build-dir: .ci/docker
+          working-directory: pytorch
+
       - name: Pull Docker image
         if: ${{ steps.filter.outputs.is-test-matrix-empty == 'False' && inputs.build_environment != 'linux-s390x-binary-manywheel' }}
         uses: pytorch/test-infra/.github/actions/pull-docker-image@main
         with:
-          docker-image: ${{ inputs.DOCKER_IMAGE }}
+          docker-image: ${{ steps.calculate-docker-image.outputs.docker-image }}
 
       - name: Test Pytorch binary
         if: ${{ steps.filter.outputs.is-test-matrix-empty == 'False' }}
