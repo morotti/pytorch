@@ -15,7 +15,9 @@ if [ -z "${image}" ]; then
 fi
 
 DOCKER_IMAGE="pytorch/${image}"
+# Go from imagename:tag-commitsha to tag-commitsha
 DOCKER_TAG_PREFIX=$(echo "${tag}" | awk -F':' '{print $2}')
+# Remove the commit sha from the tag
 DOCKER_TAG_PREFIX=${DOCKER_TAG_PREFIX%-*}
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY:-docker.io}"
