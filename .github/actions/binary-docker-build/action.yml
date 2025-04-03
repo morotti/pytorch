@@ -55,4 +55,6 @@ runs:
         max_attempts: 3
         retry_wait_seconds: 90
         command: |
-          .ci/docker/${{ inputs.docker-build-dir }}/build.sh ${{ inputs.docker-image-name }}:${{ inputs.custom-tag-prefix }}
+          .ci/docker/${{ inputs.docker-build-dir }}/build.sh \
+            ${{ inputs.docker-image-name }} \
+            -t docker.io/${{ inputs.docker-image-name }}:${{ inputs.custom-tag-prefix }}-main
