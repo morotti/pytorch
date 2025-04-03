@@ -87,7 +87,7 @@ case ${image} in
         MANY_LINUX_VERSION="2_28"
         ;;
     *)
-        echo "ERROR: Unrecognized GPU_ARCH_TYPE: ${GPU_ARCH_TYPE}"
+        echo "ERROR: Unrecognized image name: ${image}"
         exit 1
         ;;
 esac
