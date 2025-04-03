@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Script used only in CD pipeline
 
-set -eou pipefail
+set -exou pipefail
 
 TOPDIR=$(git rev-parse --show-toplevel)
 
@@ -22,10 +22,10 @@ DOCKER_REGISTRY="${DOCKER_REGISTRY:-docker.io}"
 GPU_ARCH_VERSION=""
 if [[ "${image}" == *:cuda* ]]; then
     # extract cuda version from image name.  e.g. manylinux2_28-builder:cuda12.8 returns 12.8
-    GPU_ARCH_VERSION=$(echo "${DOCKER_TAG_PREFIX}" | awk -F':cuda' '{print $2}')
+    GPU_ARCH_VERSION=$(echo "${DOCKER_TAG_PREFIX}" | awk -F'cuda' '{print $2}')
 elif [[ "${image}" == *:rocm* ]]; then
     # extract rocm version from image name.  e.g. manylinux2_28-builder:rocm6.2.4 returns 6.2.4
-    GPU_ARCH_VERSION=$(echo "${DOCKER_TAG_PREFIX}" | awk -F':rocm' '{print $2}')
+    GPU_ARCH_VERSION=$(echo "${DOCKER_TAG_PREFIX}" | awk -F'rocm' '{print $2}')
 fi
 
 case ${image}:${DOCKER_TAG_PREFIX} in
