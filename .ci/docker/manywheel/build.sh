@@ -17,92 +17,71 @@ DOCKER_IMAGE="pytorch/${image}"
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY:-docker.io}"
 
-GPU_ARCH_TYPE=${GPU_ARCH_TYPE:-cpu}
-GPU_ARCH_VERSION=${GPU_ARCH_VERSION:-}
-MANY_LINUX_VERSION=${MANY_LINUX_VERSION:-}
-DOCKERFILE_SUFFIX=${DOCKERFILE_SUFFIX:-}
-WITH_PUSH=${WITH_PUSH:-}
+GPU_ARCH_VERSION=""
+if [[ "${image}" == *:cuda* ]]; then
+    # extract cuda version from image name.  e.g. manylinux2_28-builder:cuda12.8 returns 12.8
+    GPU_ARCH_VERSION=$(echo "${image}" | awk -F':cuda' '{print $2}')
+elif [[ "${image}" == *:rocm* ]]; then
+    # extract rocm version from image name.  e.g. manylinux2_28-builder:rocm6.2.4 returns 6.2.4
+    GPU_ARCH_VERSION=$(echo "${image}" | awk -F':rocm' '{print $2}')
+fi
 
-case ${GPU_ARCH_TYPE} in
-    cpu)
+case ${image} in
+    manylinux2_28-builder:cpu)
         TARGET=cpu_final
-        DOCKER_TAG=cpu
-        GPU_IMAGE=centos:7
-        DOCKER_GPU_BUILD_ARG=" --build-arg DEVTOOLSET_VERSION=9"
-        ;;
-    cpu-manylinux_2_28)
-        TARGET=cpu_final
-        DOCKER_TAG=cpu
         GPU_IMAGE=amd64/almalinux:8
         DOCKER_GPU_BUILD_ARG=" --build-arg DEVTOOLSET_VERSION=11"
         MANY_LINUX_VERSION="2_28"
         ;;
-    cpu-aarch64)
+    manylinuxaarch64-builder:cpu-aarch64)
         TARGET=final
-        DOCKER_TAG=cpu-aarch64
         GPU_IMAGE=arm64v8/centos:7
         DOCKER_GPU_BUILD_ARG=" --build-arg DEVTOOLSET_VERSION=10"
         MANY_LINUX_VERSION="aarch64"
         ;;
-    cpu-aarch64-2_28)
+    manylinux2_28_aarch64-builder:cpu-aarch64)
         TARGET=final
-        DOCKER_TAG=cpu-aarch64
         GPU_IMAGE=arm64v8/almalinux:8
         DOCKER_GPU_BUILD_ARG=" --build-arg DEVTOOLSET_VERSION=11 --build-arg NINJA_VERSION=1.12.1"
         MANY_LINUX_VERSION="2_28_aarch64"
         ;;
-    cpu-cxx11-abi)
+    manylinuxcxx11-abi-builder:cpu-cxx11-abi)
         TARGET=final
-        DOCKER_TAG=cpu-cxx11-abi
         GPU_IMAGE=""
         DOCKER_GPU_BUILD_ARG=" --build-arg DEVTOOLSET_VERSION=9"
         MANY_LINUX_VERSION="cxx11-abi"
         ;;
-    cpu-s390x)
+    manylinuxs390x-builder:cpu-s390x)
         TARGET=final
-        DOCKER_TAG=cpu-s390x
         GPU_IMAGE=s390x/almalinux:8
         DOCKER_GPU_BUILD_ARG=""
         MANY_LINUX_VERSION="s390x"
         ;;
-    cuda)
+    manylinux2_28-builder:cuda*)
         TARGET=cuda_final
-        DOCKER_TAG=cuda${GPU_ARCH_VERSION}
-        # Keep this up to date with the minimum version of CUDA we currently support
-        GPU_IMAGE=centos:7
-        DOCKER_GPU_BUILD_ARG="--build-arg BASE_CUDA_VERSION=${GPU_ARCH_VERSION} --build-arg DEVTOOLSET_VERSION=9"
-        ;;
-    cuda-manylinux_2_28)
-        TARGET=cuda_final
-        DOCKER_TAG=cuda${GPU_ARCH_VERSION}
         GPU_IMAGE=amd64/almalinux:8
         DOCKER_GPU_BUILD_ARG="--build-arg BASE_CUDA_VERSION=${GPU_ARCH_VERSION} --build-arg DEVTOOLSET_VERSION=11"
         MANY_LINUX_VERSION="2_28"
         ;;
-    cuda-aarch64)
+    manylinuxaarch64-builder:cuda*)
         TARGET=cuda_final
-        DOCKER_TAG=cuda${GPU_ARCH_VERSION}
         GPU_IMAGE=arm64v8/centos:7
         DOCKER_GPU_BUILD_ARG="--build-arg BASE_CUDA_VERSION=${GPU_ARCH_VERSION} --build-arg DEVTOOLSET_VERSION=11"
         MANY_LINUX_VERSION="aarch64"
         DOCKERFILE_SUFFIX="_cuda_aarch64"
         ;;
-    rocm|rocm-manylinux_2_28)
+    manylinux2_28-builder:rocm*)
         TARGET=rocm_final
-        DOCKER_TAG=rocm${GPU_ARCH_VERSION}
         GPU_IMAGE=rocm/dev-centos-7:${GPU_ARCH_VERSION}-complete
         DEVTOOLSET_VERSION="9"
-        if [ ${GPU_ARCH_TYPE} == "rocm-manylinux_2_28" ]; then
-            MANY_LINUX_VERSION="2_28"
-            DEVTOOLSET_VERSION="11"
-            GPU_IMAGE=rocm/dev-almalinux-8:${GPU_ARCH_VERSION}-complete
-        fi
+        MANY_LINUX_VERSION="2_28"
+        DEVTOOLSET_VERSION="11"
+        GPU_IMAGE=rocm/dev-almalinux-8:${GPU_ARCH_VERSION}-complete
         PYTORCH_ROCM_ARCH="gfx900;gfx906;gfx908;gfx90a;gfx942;gfx1030;gfx1100;gfx1101;gfx1102;gfx1200;gfx1201"
         DOCKER_GPU_BUILD_ARG="--build-arg ROCM_VERSION=${GPU_ARCH_VERSION} --build-arg PYTORCH_ROCM_ARCH=${PYTORCH_ROCM_ARCH} --build-arg DEVTOOLSET_VERSION=${DEVTOOLSET_VERSION}"
         ;;
-    xpu)
+    manylinux2_28-builder:xpu)
         TARGET=xpu_final
-        DOCKER_TAG=xpu
         GPU_IMAGE=amd64/almalinux:8
         DOCKER_GPU_BUILD_ARG=" --build-arg DEVTOOLSET_VERSION=11"
         MANY_LINUX_VERSION="2_28"
@@ -115,7 +94,7 @@ esac
 
 IMAGES=''
 
-if [[ -n ${MANY_LINUX_VERSION} && -z ${DOCKERFILE_SUFFIX} ]]; then
+if [[ -z ${DOCKERFILE_SUFFIX:-} ]]; then
     DOCKERFILE_SUFFIX=_${MANY_LINUX_VERSION}
 fi
 (
@@ -146,7 +125,7 @@ GIT_COMMIT_SHA=${GITHUB_SHA:-$(git rev-parse HEAD)}
 DOCKER_IMAGE_BRANCH_TAG=${DOCKER_IMAGE}-${GIT_BRANCH_NAME}
 DOCKER_IMAGE_SHA_TAG=${DOCKER_IMAGE}-${GIT_COMMIT_SHA}
 
-if [[ "${WITH_PUSH}" == true ]]; then
+if [[ "${WITH_PUSH:-}" == true ]]; then
     (
         set -x
         docker push "${DOCKER_IMAGE}"
