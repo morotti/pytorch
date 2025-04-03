@@ -15,7 +15,8 @@ if [ -z "${image}" ]; then
 fi
 
 DOCKER_IMAGE="pytorch/${image}"
-DOCKER_TAG_PREFIX=$(echo "${tag}" | awk -F':' '{print $2}' | awk -F'-' '{print $1}')
+DOCKER_TAG_PREFIX=$(echo "${tag}" | awk -F':' '{print $2}')
+DOCKER_TAG_PREFIX=${DOCKER_TAG_PREFIX%-*}
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY:-docker.io}"
 
@@ -93,8 +94,6 @@ case ${image}:${DOCKER_TAG_PREFIX} in
         exit 1
         ;;
 esac
-
-IMAGES=''
 
 if [[ -z ${DOCKERFILE_SUFFIX:-} ]]; then
     DOCKERFILE_SUFFIX=_${MANY_LINUX_VERSION}
